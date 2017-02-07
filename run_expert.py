@@ -15,6 +15,7 @@ import numpy as np
 import tf_util
 import gym
 import load_policy
+import pdb
 
 def main():
     import argparse
@@ -27,6 +28,7 @@ def main():
                         help='Number of expert roll outs')
     args = parser.parse_args()
 
+    print args
     print('loading and building expert policy')
     policy_fn = load_policy.load_policy(args.expert_policy_file)
     print('loaded and built')
@@ -36,6 +38,8 @@ def main():
 
         import gym
         env = gym.make(args.envname)
+        print(env.action_space.shape)
+        print(env.observation_space)
         max_steps = args.max_timesteps or env.spec.timestep_limit
 
         returns = []
@@ -66,7 +70,14 @@ def main():
         print('std of return', np.std(returns))
 
         expert_data = {'observations': np.array(observations),
-                       'actions': np.array(actions)}
+                       'actions': np.array(actions), 
+                       'inp_size': env.observation_space.shape[0],
+                       'outp_size': env.action_space.shape[0]
+                       }
+
+        with open('training_%s.pickle' % args.envname, 'w') as f:
+            pickle.dump(expert_data, f)
+
 
 if __name__ == '__main__':
     main()
