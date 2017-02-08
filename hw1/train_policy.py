@@ -55,6 +55,7 @@ class BCNet:
                 update=nesterov_momentum,
                 update_learning_rate=0.01,
                 update_momentum=0.9,
+                objective_l2=0.001,
 
                 regression=True,  # flag to indicate we're dealing with regression problem
                 max_epochs=400,  # we want to train this many epochs
