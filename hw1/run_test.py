@@ -92,7 +92,7 @@ def main():
                 # import pdb; pdb.set_trace()
                 traj = rollout(args,policy_fn,bcnet)
                 dagger_iters.append(traj)
-                print 'New mean reward is: %d' % np.mean(traj['returns'])
+                print 'New mean/std reward is: %f/%f' % (np.mean(traj['returns']), np.std(traj['returns']))
                 new_input = traj['observations']
                 new_output = np.squeeze(np.asarray(map(lambda x: expert_fn(x[None,:]),new_input)))
                 X = np.concatenate((X,new_input))
