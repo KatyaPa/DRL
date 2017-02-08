@@ -64,11 +64,13 @@ def main():
     parser.add_argument('--envname', type=str, default='Humanoid-v1')
     parser.add_argument('--training_file', type=str, default='training_Humanoid-v1.pickle')
     parser.add_argument('--network_file', type=str, default='humanoid.net')
+    parser.add_argument('--output_file', type=str)
     parser.add_argument('--dagger', type=int, default=0,
         help='Number of dagger iterations')
     parser.add_argument('--hidden', type=int, default=100,
         help='Size of hidden layer')
     parser.add_argument('--training', action='store_true')
+    parser.add_argument('--expert', action='store_true')
     parser.add_argument('--render', action='store_true')
     parser.add_argument("--max_timesteps", type=int)
     parser.add_argument('--num_rollouts', type=int, default=20,
@@ -80,13 +82,13 @@ def main():
     with tf.Session():
         tf_util.initialize()
 
+        expert_fn = load_policy.load_policy(args.expert_policy_file)
         if args.training:
             X, y = bcnet.get_train_data(args.training_file)
             bcnet.params['hidden']=args.hidden  
             bcnet.create_net()
             bcnet.net1.fit(bcnet.normalize_data(X),y)
-            # import pdb; pdb.set_trace()
-            expert_fn = load_policy.load_policy(args.expert_policy_file)
+            # import pdb; pdb.set_trace()            
             dagger_iters = []
             for i in range(args.dagger):
                 # import pdb; pdb.set_trace()
@@ -116,7 +118,8 @@ def main():
         print(env.action_space.shape)
         print(env.observation_space)
         max_steps = args.max_timesteps or env.spec.timestep_limit
-        bcnet.load_model(args.network_file)
+        if not args.expert: 
+            bcnet.load_model(args.network_file)
 
         returns = []
         observations = []
@@ -127,8 +130,8 @@ def main():
             done = False
             totalr = 0.
             steps = 0
-            while not done:
-                action = policy_fn(obs,bcnet)
+            while not done:                
+                action = expert_fn(obs[None,:]) if args.expert else policy_fn(obs,bcnet)
                 observations.append(obs)
                 actions.append(action)
                 obs, r, done, _ = env.step(action)
@@ -148,11 +151,14 @@ def main():
         expert_data = {'observations': np.array(observations),
                        'actions': np.array(actions), 
                        'inp_size': env.observation_space.shape[0],
-                       'outp_size': env.action_space.shape[0]
+                       'outp_size': env.action_space.shape[0],
+                       'mean_returns': np.mean(returns), 
+                       'std_returns': np.std(returns),
                        }
 
-        # with open('training_%s.pickle' % args.envname, 'w+') as f:
-        #     pickle.dump(expert_data, f)
+        fname = args.output_file if args.output_file is not None else 'training_%s.pickle' % args.envname
+        with open(fname, 'w+') as f:
+            pickle.dump(expert_data, f)
 
 
 if __name__ == '__main__':
