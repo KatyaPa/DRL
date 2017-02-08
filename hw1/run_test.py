@@ -105,8 +105,9 @@ def main():
                 bcnet.create_net()
                 bcnet.net1.fit(bcnet.normalize_data(X),y)
             bcnet.save_params_to(args.network_file)
-            with open('%s_dagger.out' % args.envname,'w') as f:
-                pickle.dump(dagger_iters,f)
+            if args.dagger > 0:
+                with open('%s_dagger.out' % args.envname,'w') as f:
+                    pickle.dump(dagger_iters,f)
             return
 
 
