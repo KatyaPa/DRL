@@ -144,6 +144,7 @@ def main():
                     break
             returns.append(totalr)
 
+
         print('returns', returns)
         print('mean return', np.mean(returns))
         print('std of return', np.std(returns))
@@ -156,7 +157,8 @@ def main():
                        'std_returns': np.std(returns),
                        }
 
-        fname = args.output_file if args.output_file is not None else 'training_%s.pickle' % args.envname
+        defname = 'training_%s.pickle' % args.envname if args.expert else 'test_%s.pickle' % args.envname
+        fname = args.output_file if args.output_file is not None else defname
         with open(fname, 'w+') as f:
             pickle.dump(expert_data, f)
 
