@@ -7,18 +7,18 @@ from matplotlib.table import table
 
 expert  = 'python run_test.py --expert --envname=%s --expert_policy_file=experts/%s.pkl --output_file=%s --num_rollouts=100'
 bc      = 'python run_test.py --envname=%s --network_file=%s.net --output_file=%s --num_rollouts=100' 
-dagger  = 'python run_test.py --network_file=Humanoid-v1_dagger.net --training --hidden=600'
+dagger  = 'python run_test.py --network_file=Humanoid-v1_dagger.net --training --hidden=600 --dagger=15'
 
 
-def create_returns_file(fin, fout):
-    
-    obj = load_file(fin)
-
-    returns =  np.array(map(lambda d: [np.mean(d['returns']),np.std(d['returns'])], obj))
-
-    with open(fout ,'w') as f:
-        pickle.dump(returns,f)
-
+#def create_returns_file(fin, fout):
+#    
+#    obj = load_file(fin)
+#
+#    returns =  np.array(map(lambda d: [np.mean(d['returns']),np.std(d['returns'])], obj))
+#
+#    with open(fout ,'w') as f:
+#        pickle.dump(returns,f)
+#
 
 def load_file(fin):
 
@@ -77,7 +77,7 @@ def create_dagger_plot(returns):
     fin     = 'Humanoid-v1_dagger.out'
     dagger_returns = load_file(fin)
     
-    returns =  np.array(map(lambda d: [np.mean(d),np.std(d)], dagger_returns))
+    dagger_returns =  np.array(map(lambda d: [np.mean(d),np.std(d)], dagger_returns))
 
     fig = plt.figure()
 
