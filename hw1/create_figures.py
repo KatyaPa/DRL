@@ -1,58 +1,65 @@
 import os
 import pickle
-
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.table import table
 
 
-fout    = 'tmp.pickle'
-#nroll   = 20
-expert  = 'python run_test.py --expert --envname=%s --expert_policy_file=experts/%s.pkl --num_rollouts=%d --output_file='+fout
-our     = 'python run_test.py  --envname=%s --network_file=%s.net --num_rollouts=%d --output_file='+fout      
+expert  = 'python run_test.py --expert --envname=%s --expert_policy_file=experts/%s.pkl --output_file=%s'
+bc      = 'python run_test.py  --envname=%s --network_file=%s.net --output_file=%s'      
 
 
-def load_fout():
+def create_returns_file(fin, fout):
+    
+    obj = load_file(fin)
 
-    with open(fout,'r') as f:
-        return pickle.load(f)
+    returns =  np.array(map(lambda d: [np.mean(d['returns']),np.std(d['returns'])], obj))
+
+    with open(fout ,'w') as f:
+        pickle.dump(returns,f)
 
 
-def create_row(policy, nroll):
+def load_file(fin):
 
-    print expert % (policy,policy,nroll)    
-    os.system(expert % (policy,policy,nroll))
-    obj = load_fout()
+    print("Loading file")
+    with open(fin,'r') as f:
+        obj = pickle.load(f)
+    print('Finished loading file')
+    return obj
+
+
+def create_row(policy):
+
+    ftmp    = 'tmp.pickle'
+
+    print expert % (policy,policy,ftmp)    
+    os.system(expert % (policy,policy,ftmp))
+    obj = load_file(ftmp)
     expert_mean = round(obj['mean_returns'],3)
     expert_std = round(obj['std_returns'],3)
 
-    print our % (policy,policy,nroll)
-    os.system(our % (policy,policy,nroll))
-    obj = load_fout()
+    print bc % (policy,policy,ftmp)
+    os.system(bc % (policy,policy,ftmp))
+    obj = load_file(ftmp)
     our_mean = round(obj['mean_returns'],3)
     our_std = round(obj['std_returns'],3)
 
-    os.remove(fout)
+    os.remove(ftmp)
 
     return [(expert_mean,expert_std), (our_mean, our_std)]
     
 
-def create_table(nroll):
+def create_table(RowLabels, cellText):
     
-    ColLabels = ('Expert\n'+'(mean,std)', 'Ours\n'+'(mean,std)')
+    ColLabels = ('Expert\n'+'(mean,std)', 'BC\n'+'(mean,std)')
     
-    RowLabels = ('Walker2d-v1','Humanoid-v1')
-    
-    cellText = []
-    for policy in RowLabels:
-        cellText.append(create_row(policy,nroll))
-
     ncols = len(ColLabels)
     
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.axis('off')
     
-    the_table =ax.table(cellText=cellText,
+    the_table = ax.table(cellText=cellText,
                         colWidths=[.2]*ncols,
                         rowLabels= RowLabels, 
                         colLabels=ColLabels, 
@@ -63,19 +70,53 @@ def create_table(nroll):
     plt.savefig('Table22.png',bbox_inches='tight')
 
 
+def create_dagger_plot(returns):
+
+    fin     = 'Humanoid-v1_dagger.out'
+    fout    = 'Humanoid-v1_dagger_returns.out'
+
+    if not os.path.isfile(fout):
+        create_returns_file(fin, fout)
+
+    dagger_returns = load_file(fout)
+
+
+    fig = plt.figure()
+
+    n_daggers  = len(dagger_returns)
+    x           = np.arange(n_daggers)+1
+
+    y_dagger   = dagger_returns[:,0]
+    e_dagger   = dagger_returns[:,1]
+    plt.errorbar(x, y_dagger, yerr=e_dagger, linestyle='-', marker='o', ecolor='g')
+
+    y_expert = [returns[0][0]]*n_daggers
+    e_expert = [returns[0][1]]*n_daggers
+    plt.errorbar(x,y_expert, yerr =e_expert  , linestyle='--', marker='^', color='k')
+
+    y_bc = [returns[1][0]]*n_daggers
+    e_bc = [returns[1][1]]*n_daggers
+    plt.errorbar(x,y_bc, yerr =e_bc  , linestyle='--', marker='^', color='r')
+
+    plt.savefig('Plot32.png',bbox_inches='tight')
+
+    #plt.show()
+
+def create_hyperparm_plot():
+    return
 
 
 def main():
     
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--num_rollouts', type=int, default=20,
-                        help='Number of roll outs')
-
-    args = parser.parse_args()
-   
-    create_table(args.num_rollouts)
+    policies = ('Ant-v1','Humanoid-v1')
     
+    cellText = []
+    for policy in policies:
+        cellText.append(create_row(policy))
+
+    create_table(policies, cellText)
+    create_hyperparm_plot()
+    create_dagger_plot(cellText[1])
 
 if __name__ == '__main__':
     main()
