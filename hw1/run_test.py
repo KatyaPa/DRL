@@ -72,6 +72,8 @@ def main():
     parser.add_argument('--output_file', type=str)
     parser.add_argument('--dagger', type=int, default=0,
         help='Number of dagger iterations')
+    parser.add_argument('--epochs', type=int, default=400,
+        help='Number of learning epochs')
     parser.add_argument('--hidden', type=int, default=100,
         help='Size of hidden layer')
     parser.add_argument('--training', action='store_true')
@@ -91,6 +93,7 @@ def main():
         if args.training:
             X, y = bcnet.get_train_data(args.training_file)
             bcnet.params['hidden']=args.hidden  
+            bcnet.params['epochs']=args.epochs  
             bcnet.create_net()
             bcnet.net1.fit(bcnet.normalize_data(X),y)
             # import pdb; pdb.set_trace()            
@@ -108,14 +111,15 @@ def main():
                 print 'Total size of data: %d' % X.shape[0]
                 bcnet = BCNet()
                 bcnet.params['hidden']=args.hidden
+                bcnet.params['epochs']=args.epochs  
                 bcnet.params['inp_size']=X.shape[1]                  
                 bcnet.params['outp_size']=y.shape[1]
                 bcnet.create_net()
                 bcnet.net1.fit(bcnet.normalize_data(X),y)
             bcnet.save_params_to(args.network_file)
-            if args.dagger > 0:
+            if args.dagger > 0:                
                 with open('%s_dagger.out' % args.envname,'w') as f:
-                    pickle.dump(dagger_iters,f)
+                    pickle.dump(map(lambda x: x['returns'],dagger_iters),f)
             return
 
 
@@ -150,6 +154,7 @@ def main():
                     break
             returns.append(totalr)
 
+
         print('returns', returns)
         print('mean return', np.mean(returns))
         print('std of return', np.std(returns))
@@ -162,7 +167,8 @@ def main():
                        'std_returns': np.std(returns),
                        }
 
-        fname = args.output_file if args.output_file is not None else 'training_%s.pickle' % args.envname
+        defname = 'training_%s.pickle' % args.envname if args.expert else 'test_%s.pickle' % args.envname
+        fname = args.output_file if args.output_file is not None else defname
         with open(fname, 'w+') as f:
             pickle.dump(expert_data, f)
 

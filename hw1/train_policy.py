@@ -21,7 +21,8 @@ class BCNet:
         self.params = {
             'inp_size': 10,
             'outp_size': 5,
-            'hidden': 100
+            'hidden': 100,
+            'epochs': 400
         }
 
 
@@ -58,7 +59,7 @@ class BCNet:
                 # objective_l2=0.001,
 
                 regression=True,  # flag to indicate we're dealing with regression problem
-                max_epochs=400,  # we want to train this many epochs
+                max_epochs=self.params['epochs'],  # we want to train this many epochs
                 verbose=1,
                 )
     
