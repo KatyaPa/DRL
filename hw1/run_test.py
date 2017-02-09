@@ -16,6 +16,8 @@ import tf_util
 import gym
 import load_policy
 from train_policy import BCNet
+from sklearn.utils import shuffle
+
 
 def rollout(args, policy_fn, bcnet):
     with tf.Session():
@@ -30,6 +32,7 @@ def rollout(args, policy_fn, bcnet):
         observations = []
         actions = []
         for i in range(args.num_rollouts):
+            print('iter', i)
             obs = env.reset()
             done = False
             steps = 0
@@ -58,12 +61,14 @@ def policy_fn(inp,nn):
     return nn.predict_for(inp)
 
 def main():
+    np.random.seed(112)
+
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--expert_policy_file', type=str, default='experts/Humanoid-v1.pkl')
     parser.add_argument('--envname', type=str, default='Humanoid-v1')
     parser.add_argument('--training_file', type=str, default='training_Humanoid-v1.pickle')
-    parser.add_argument('--network_file', type=str, default='humanoid.net')
+    parser.add_argument('--network_file', type=str, default='Humanoid-v1.net')
     parser.add_argument('--output_file', type=str)
     parser.add_argument('--dagger', type=int, default=0,
         help='Number of dagger iterations')
@@ -99,6 +104,7 @@ def main():
                 new_output = np.squeeze(np.asarray(map(lambda x: expert_fn(x[None,:]),new_input)))
                 X = np.concatenate((X,new_input))
                 y = np.concatenate((y,new_output))
+                X, y = shuffle(X, y, random_state=54)
                 print 'Total size of data: %d' % X.shape[0]
                 bcnet = BCNet()
                 bcnet.params['hidden']=args.hidden
