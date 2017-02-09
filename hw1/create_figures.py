@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from matplotlib.table import table
 
 
-expert  = 'python run_test.py --expert --envname=%s --expert_policy_file=experts/%s.pkl --output_file=%s'
-bc      = 'python run_test.py  --envname=%s --network_file=%s.net --output_file=%s'      
+expert  = 'python run_test.py --expert --envname=%s --expert_policy_file=experts/%s.pkl --output_file=%s --num_rollouts=100'
+bc      = 'python run_test.py --envname=%s --network_file=%s.net --output_file=%s --num_rollouts=100' 
+dagger  = 'python run_test.py --network_file=Humanoid-v1_dagger.net --training --hidden=600'
 
 
 def create_returns_file(fin, fout):
@@ -72,14 +73,11 @@ def create_table(RowLabels, cellText):
 
 def create_dagger_plot(returns):
 
+    os.system(dagger)
     fin     = 'Humanoid-v1_dagger.out'
-    fout    = 'Humanoid-v1_dagger_returns.out'
-
-    if not os.path.isfile(fout):
-        create_returns_file(fin, fout)
-
-    dagger_returns = load_file(fout)
-
+    dagger_returns = load_file(fin)
+    
+    returns =  np.array(map(lambda d: [np.mean(d),np.std(d)], dagger_returns))
 
     fig = plt.figure()
 
